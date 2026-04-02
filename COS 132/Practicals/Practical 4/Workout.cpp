@@ -91,8 +91,8 @@ int progressionDecision(int prevReps, int currReps) {
         return 0;
     }
 
-    int prevIntensity = intensityLevel(prevReps, 4);
-    int currIntensity = intensityLevel(currReps, 4);
+    int prevIntensity = intensityLevel(prevReps);
+    int currIntensity = intensityLevel(currReps);
 
     if (currIntensity > prevIntensity) {
         return 1;
