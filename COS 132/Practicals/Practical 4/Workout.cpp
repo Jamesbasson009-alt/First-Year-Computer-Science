@@ -52,7 +52,6 @@ int scoreFromCategory(char category) {
 }
 
 int intensityLevel(int reps, double weightKg) {
-
     if (!isSetValid(reps, weightKg)) {
         return 0;
     }
@@ -61,15 +60,13 @@ int intensityLevel(int reps, double weightKg) {
         return 1;
     }
 
-    double intensity = reps + (weightKg / 3.0);
+    double intensity = scoreFromCategory(repCategory(reps)) + (weightKg / 3.0);
     
     if (intensity > 22) {
         return 3;
-    }
-    else if (intensity > 12) {
+    } else if (intensity > 12) {
         return 2;
-    }
-    else {
+    } else {
         return 1;
     }
 }
