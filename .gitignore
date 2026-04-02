@@ -17,4 +17,6 @@ Thumbs.db
 
 # Build directories
 build/
-bin/
+
+#Zip folders for practical submissions
+*.zip

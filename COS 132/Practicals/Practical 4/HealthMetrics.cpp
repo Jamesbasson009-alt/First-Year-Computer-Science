@@ -52,7 +52,7 @@ int HealthMetrics::bmiCategory(double bmiValue) {
         return 2;
     } else if (bmiValue < 30 || bmiValue == 25) {
         return 3; 
-    } else if (bmiValue >= 30) {
+    } else {
         return 4;
     }
 }
