@@ -80,7 +80,11 @@ void printMealInfo(const string meal){
 }
 
 double macroRatio(const string meal, const string macro) {
-    return (getAmount(meal, macro) * kjPerGram(macro)) /getAmount(meal, KJ);
+    double kj = getAmount(meal, KJ);
+    if (kj == 0) {
+        return 0;
+    }
+    return (getAmount(meal, macro) * kjPerGram(macro)) / kj;
 }
 
 bool isHighMacro(const string meal, const string macro) {

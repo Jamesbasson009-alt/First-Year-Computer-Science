@@ -75,6 +75,8 @@ int intensityLevel(int reps, double weightKg) {
 }
 
 int progressionDecision(double prevWeight, double currWeight, int prevReps, int currReps) {
+    if (!isSetValid(prevReps, prevWeight) || !isSetValid(currReps, currWeight)) {
+        return 0; }
     if (currWeight > prevWeight) {
         return 1;
     } else if (currWeight < prevWeight) {
@@ -83,6 +85,24 @@ int progressionDecision(double prevWeight, double currWeight, int prevReps, int 
     return 0;
     
 }
+
+int progressionDecision(int prevReps, int currReps) {
+    if (prevReps <= 0 || currReps <= 0) {
+        return 0;
+    }
+
+    int prevIntensity = intensityLevel(prevReps, 4);
+    int currIntensity = intensityLevel(currReps, 4);
+
+    if (currIntensity > prevIntensity) {
+        return 1;
+    } else {
+        return -1;
+    }
+}
+
+
+
 
 
 

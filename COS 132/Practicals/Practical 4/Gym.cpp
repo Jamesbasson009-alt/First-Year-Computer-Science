@@ -51,3 +51,84 @@ string goalAdvice(int age, double weightKg, double heightM, const string m1, con
 
     return advice;
 }
+
+bool isGoalValid(char goal) {
+
+    if (goal == 'B' || goal == 'C' || goal == 'T') {
+        return true;
+    }
+    return false;
+}
+
+double kiloJouleTarget(double tdeeValue, char goal) {
+    if (!isGoalValid(goal) || tdeeValue < 0) {
+        return 0;
+    }
+    if (goal == 'B') {
+        tdeeValue += 500;
+    } else if (goal == 'C') {
+        tdeeValue -= 500;
+    }
+    return tdeeValue;
+}
+
+double proteinTarget(double weightKg, char goal) {
+    if (!isGoalValid(goal) || weightKg < 0) {
+        return 0;
+    }
+    switch (goal)
+    {
+    case 'B':
+        weightKg *= 2;
+        break;
+
+    case 'C':
+        weightKg *= 1.2;
+        break;
+
+     case 'T':
+        weightKg *= 0.8;
+        break;
+    
+    default:
+        break;
+    }
+    return weightKg;
+}
+
+int nutritionScore(int age, double weightKg, double heightM, const string m1, const string m2, const string m3, int activityLevel, char goal) {
+    double totalKj = getAmount(m1, KJ) + getAmount(m2, KJ) + getAmount(m3, KJ);
+    double totalProtein = getAmount(m1, PROTEIN) + getAmount(m2, PROTEIN) + getAmount(m3, PROTEIN);
+    int score = 0;
+
+    double tdeeValue = tdee(bmr(age, weightKg, heightM), activityLevel);
+    double kjTarget = kiloJouleTarget(tdeeValue, goal);
+    double pTarget = proteinTarget(weightKg, goal);
+
+    if (totalKj >= kjTarget) {
+        score += 2;
+    } else if (totalKj >= kjTarget * 0.75) {
+        score +=1;
+    }
+
+    if (totalProtein >= pTarget) {
+        score += 2;
+    } else if (totalProtein >= pTarget * 0.75) {
+        score +=1;
+    }
+
+    if (goal == 'B') {
+        if (isHighMacro(m1, PROTEIN)) score += 1;
+        if (isHighMacro(m2, PROTEIN)) score += 1;
+        if (isHighMacro(m3, PROTEIN)) score += 1;
+    } else if (goal == 'C') {
+        if (isHighMacro(m1, FAT)) score -= 1;
+        if (isHighMacro(m2, FAT)) score -= 1;
+        if (isHighMacro(m3, FAT)) score -= 1;
+    }
+
+    if (score < 0) {
+        return 0;
+    }
+    return score;
+}
