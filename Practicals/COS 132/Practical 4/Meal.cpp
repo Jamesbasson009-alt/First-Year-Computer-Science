@@ -79,3 +79,19 @@ void printMealInfo(const string meal){
     cout << "Fat (g): " << getAmount(meal, FAT) << endl;
 }
 
+double macroRatio(const string meal, const string macro) {
+    return (getAmount(meal, macro) * kjPerGram(macro)) /getAmount(meal, KJ);
+}
+
+bool isHighMacro(const string meal, const string macro) {
+    double ratio = macroRatio(meal, macro);
+    
+    if (macro == PROTEIN && ratio > 0.25) {
+        return true;
+    } else if (macro == CARBS && ratio > 0.5) {
+        return true;
+    } else if (macro == FAT && ratio > 0.3) {
+        return true;
+    }
+    return false;
+}

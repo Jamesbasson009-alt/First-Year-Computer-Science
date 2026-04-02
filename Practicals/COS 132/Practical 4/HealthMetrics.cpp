@@ -42,3 +42,17 @@ double HealthMetrics::tdee(double bmrValue, int activityLevel){
 
     return result;
 }
+
+int HealthMetrics::bmiCategory(double bmiValue) {
+    if (bmiValue <= 0) {
+        return 0;
+    } else if (bmiValue < 18.5) {
+        return 1;
+    } else if (bmiValue < 25 || bmiValue == 18.5) {
+        return 2;
+    } else if (bmiValue < 30 || bmiValue == 25) {
+        return 3; 
+    } else if (bmiValue >= 30) {
+        return 4;
+    }
+}
