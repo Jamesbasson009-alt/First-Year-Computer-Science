@@ -28,6 +28,8 @@ bool startFumigation(std::string bugType, int count, int houseSize, bool rushJob
 
     double solution = calculateSolution(getEffectiveArea(houseSize), getBugDensity(bugType), isSevereInfestation(bugType, count));
 
+    std::cout << "Starting fumigation of " << bugType << "(s/es) which are \"" << getBugInfo(bugType) << "\" with "<< solution << "ml of solution." << std::endl;
+    
     int roomsFumigated = fumigate(solution);
 
     int estimatedTime = estimateTreatmentTime(countAccessibleRooms(), rushJob);
