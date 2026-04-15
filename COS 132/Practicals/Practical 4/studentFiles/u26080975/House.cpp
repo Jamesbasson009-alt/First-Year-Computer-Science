@@ -108,11 +108,19 @@ int fumigate(double solution){
     int fumigated = 0;
 
     for (int id = 1; id <= 5; id++) {
-    double cost = 0.4 * roomSize(id);
-    if (solution < cost) continue;
-    solution -= cost;
-    if (canFumigateRoom(id)) fumigated++;
-    }   
+
+        double cost = 0.4 * roomSize(id);
+
+        if (solution < cost) {
+            break;
+        }
+
+        solution -= cost;
+
+        if (canFumigateRoom(id)) {
+            fumigated++;
+        }
+    }
 
     return fumigated;
 }
