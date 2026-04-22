@@ -7,17 +7,21 @@
 
 void displayFactorial() {
     int n;
-    std::cout << "Enter n for factorial :" << std::endl;
+    std::cout << "Enter n for factorial:" << std::endl;
     std::cin >> n;
+    while (n<0) {
+        std::cout << "Enter n for factorial:" << std::endl;
+        std::cin >> n;   
+    }
     std::cout << n << "! = " << factorial(n) << std::endl;
 }
 
 void displaySinApprox() {
     double x;
     int terms;
-    std::cout << "Enter x ( radians ) :" << std::endl;
+    std::cout << "Enter x (radians):" << std::endl;
     std::cin >> x;
-    std::cout << "Enter number of terms :" << std::endl;
+    std::cout << "Enter number of terms:" << std::endl;
     std::cin >> terms;
     std::cout << "sin(" << std::fixed << std::setprecision(4) << x 
               << ") ~ " << std::setprecision(8) << sinApprox(x, terms) << std::endl;
@@ -26,9 +30,9 @@ void displaySinApprox() {
 void displayCosApprox() {
     double x;
     int terms;
-    std::cout << "Enter x ( radians ) :" << std::endl;
+    std::cout << "Enter x (radians):" << std::endl;
     std::cin >> x;
-    std::cout << "Enter number of terms :" << std::endl;
+    std::cout << "Enter number of terms:" << std::endl;
     std::cin >> terms;
     std::cout << "cos(" << std::fixed << std::setprecision(4) << x 
               << ") ~ " << std::setprecision(8) << cosApprox(x, terms) << std::endl;
@@ -36,15 +40,15 @@ void displayCosApprox() {
 
 void displayFibonacci() {
     int n;
-    std::cout << "Enter n for Fibonacci :" << std::endl;
+    std::cout << "Enter n for Fibonacci:" << std::endl;
     std::cin >> n;
-    std::cout << "F(" << n << ") = " << fibonacciTerm(n) << std::endl;
+    std::cout << "F("<<n<<") = " << fibonacciTerm(n) << std::endl;
     std::cout << "Sum of first " << n << " Fibonacci numbers = " << fibonacciSum(n) << std::endl;
 }
 
 void displayCollatz() {
     int n;
-    std::cout << "Enter starting number for Collatz :" << std::endl;
+    std::cout << "Enter starting number for Collatz:" << std::endl;
     std::cin >> n;
     std::cout << "Collatz sequence from " << n << " takes " 
               << collatzLength(n) << " steps to reach 1." << std::endl;
