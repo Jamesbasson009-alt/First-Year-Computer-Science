@@ -19,8 +19,8 @@ void displaySinApprox() {
     std::cin >> x;
     std::cout << "Enter number of terms :" << std::endl;
     std::cin >> terms;
-    std::cout << "sin(" << std::fixed << std::setprecision(4) << x << ")~ "
-              << std::setprecision(8) << sinApprox(x, terms) << std::endl;
+    std::cout << "sin(" << std::fixed << std::setprecision(4) << x 
+              << ") ~ " << std::setprecision(8) << sinApprox(x, terms) << std::endl;
 }
 
 void displayCosApprox() {
@@ -30,8 +30,8 @@ void displayCosApprox() {
     std::cin >> x;
     std::cout << "Enter number of terms :" << std::endl;
     std::cin >> terms;
-    std::cout << "cos(" << std::fixed << std::setprecision(4) << x << ")~ "
-              << std::setprecision(8) << cosApprox(x, terms) << std::endl;
+    std::cout << "cos(" << std::fixed << std::setprecision(4) << x 
+              << ") ~ " << std::setprecision(8) << cosApprox(x, terms) << std::endl;
 }
 
 void displayFibonacci() {

@@ -21,7 +21,7 @@ long long fibonacciTerm(int n)
 
 long long fibonacciSum(int n) {
     long long sum = 0;
-    for (int i = 0; i <= n; i++) {
+    for (int i = 1; i <= n; i++) { 
         sum += fibonacciTerm(i);
     }
     return sum;
