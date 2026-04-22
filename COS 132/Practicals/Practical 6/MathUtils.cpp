@@ -29,6 +29,21 @@ int sumDigits(int n) {
 }
 
 int digitalRoot(int n) {
-    
+    while (n >= 10) {
+        n = sumDigits(n);
+    }
+    return n;  
 }
+
+int countDivisors(int n) {
+    int counter = 0;
+    for (int i = 1; i <= n; i++) {
+        if (n % i == 0) {
+        counter++;
+        }
+    }
+    return counter;
+}
+
+
         
