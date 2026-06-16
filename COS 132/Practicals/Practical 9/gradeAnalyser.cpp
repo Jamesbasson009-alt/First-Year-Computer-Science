@@ -117,7 +117,7 @@ void printAtRiskStudents(std::string names[MAX_STUDENTS], float averages[MAX_STU
     for (int i = 0; i < MAX_STUDENTS; i++) {
         if (averages[i] == -1) break;
         if (averages[i] < threshold) {
-            std::cout << "- " << names[i] << "(Final: " << averages[i] << "%)\n";
+            std::cout << "- " << names[i] << " (Final: " << averages[i] << "%)\n";
             found = true;
         }
     }
@@ -137,7 +137,7 @@ void transposeGrades(int grades[MAX_STUDENTS][MAX_ASSESSMENTS], int transposed[M
 }
 
 int loadGrades(std::string filename, std::string names[MAX_STUDENTS], int grades[MAX_STUDENTS][MAX_ASSESSMENTS]) {
-    std::ifstream file(filename);
+    std::ifstream file(filename.c_str());
     int count = 0;
 
     while (count < MAX_STUDENTS && file >> names[count]) {
@@ -165,7 +165,7 @@ int getTopStudentIndex(float averages[MAX_STUDENTS]) {
 
 void printGradeSheet(std::string names[MAX_STUDENTS], int grades[MAX_STUDENTS][MAX_ASSESSMENTS], float averages[MAX_STUDENTS]) {
 
-    std::cout << "\nStudent\tA1\tA2\tA3\tFinal_Avg\n";
+    std::cout << "\nStudent\tA1\tA2\tA3\tFinal Avg\n";
     std::cout << "--------------------------------------------------------\n";
 
     for (int i = 0; i < MAX_STUDENTS; i++) {
