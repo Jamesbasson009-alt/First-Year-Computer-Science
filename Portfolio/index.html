@@ -12,8 +12,26 @@
 </head>
 
 <body>
-    <h1>James Basson</h1>
-    <p>Hi I'm james</p>
+    
+    <nav class="navbar" >
+        <span class="logo">James Basson</span>
+        <ul class="nav-links">
+            <li>Login</li>
+            <li>About</li>
+            <li>Skills</li>
+            <li>Projects</li>
+        </ul>
+
+
+    </nav>
+    
+    <section class="hero">
+
+        <h1>Hi, I'm James Basson</h1>
+        <p>First Year Computer Science student at the university of Pretoria</p>
+        <a href="#projects">View my projects</a>
+
+    </section>
     <div class="skill-tags">
         <h2>Skills</h2>
         <ul>
@@ -25,6 +43,28 @@
     </div>
     <h2>About me</h2>
     <p>I'm studying first year BSC Computer Science at the universty of pretoria and I love to code</p>
+
+    <button onclick="doSomething()" style="background-color: black; color: white; border-radius: 5px;">Page 2</button>
+
+
+   
+
+    <script>
+        function doSomething() {
+            document.getElementById("test").innerHTML = "Goodbye";
+        }
+    </script>
+
+   
+
+    
+
+
+
+
+
+
 </body>
+
 
 </html>
