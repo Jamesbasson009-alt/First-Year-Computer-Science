@@ -97,5 +97,11 @@ def whatsapp_reply():
     conn.close()
     return str(resp)
 
+@app.route('/run-reminders')
+def run_reminders():
+    from check_reminders import check_reminders
+    check_reminders()
+    return "Reminders checked!"
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
