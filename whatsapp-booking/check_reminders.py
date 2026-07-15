@@ -1,8 +1,8 @@
-import sqlite3
-import os
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import os
 from twilio.rest import Client
+from database import get_connection
 
 load_dotenv()
 
@@ -13,7 +13,7 @@ twilio_number = os.getenv('TWILIO_WHATSAPP_NUMBER')
 client = Client(account_sid, auth_token)
 
 def check_reminders():
-    conn = sqlite3.connect('appointments.db')
+    conn = get_connection()
     c = conn.cursor()
 
     tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
@@ -21,7 +21,7 @@ def check_reminders():
     c.execute('''
         SELECT id, practice_name, patient_name, patient_number, appointment_time
         FROM appointments
-        WHERE appointment_time LIKE ? AND reminder_sent = 0
+        WHERE appointment_time LIKE %s AND reminder_sent = 0
     ''', (f'{tomorrow}%',))
 
     due = c.fetchall()
@@ -42,7 +42,7 @@ def check_reminders():
 
         print(f"Sent to {number}, SID: {message.sid}")
 
-        c.execute('UPDATE appointments SET reminder_sent = 1 WHERE id = ?', (appt_id,))
+        c.execute('UPDATE appointments SET reminder_sent = 1 WHERE id = %s', (appt_id,))
 
     conn.commit()
     conn.close()

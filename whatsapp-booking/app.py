@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template_string
 from twilio.twiml.messaging_response import MessagingResponse
-import sqlite3
+from database import get_connection
 
 app = Flask(__name__)
 
@@ -49,11 +49,11 @@ def add_appointment():
         patient_number = request.form['patient_number']
         appointment_time = request.form['appointment_time'].replace('T', ' ')
 
-        conn = sqlite3.connect('appointments.db')
+        conn = get_connection()
         c = conn.cursor()
         c.execute('''
             INSERT INTO appointments (practice_name, patient_name, patient_number, appointment_time)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         ''', (practice_name, patient_name, patient_number, appointment_time))
         conn.commit()
         conn.close()
@@ -69,13 +69,13 @@ def whatsapp_reply():
     resp = MessagingResponse()
     msg = resp.message()
 
-    conn = sqlite3.connect('appointments.db')
+    conn = get_connection()
     c = conn.cursor()
 
     c.execute('''
         SELECT id, practice_name, appointment_time
         FROM appointments
-        WHERE patient_number = ?
+        WHERE patient_number = %s
         ORDER BY id DESC LIMIT 1
     ''', (from_number,))
     appt = c.fetchone()
