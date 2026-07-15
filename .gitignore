@@ -22,3 +22,8 @@ build/
 *.zip
 *.env
 .env
+whatsapp-booking/venv/
+whatsapp-booking/__pycache__/
+whatsapp-booking/*.pyc
+whatsapp-booking/.env
+whatsapp-booking/appointments.db
