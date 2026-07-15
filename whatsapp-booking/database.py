@@ -1,11 +1,16 @@
-import sqlite3
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+def get_connection():
+    return psycopg2.connect(os.getenv('DATABASE_URL'))
 
 def init_db():
-    conn = sqlite3.connect('appointments.db')
+    conn = get_connection()
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS appointments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             practice_name TEXT NOT NULL,
             patient_name TEXT NOT NULL,
             patient_number TEXT NOT NULL,
