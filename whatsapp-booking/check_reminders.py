@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import os
+import pytz
 from twilio.rest import Client
 from database import get_connection
 
@@ -12,11 +13,14 @@ twilio_number = os.getenv('TWILIO_WHATSAPP_NUMBER')
 
 client = Client(account_sid, auth_token)
 
+SAST = pytz.timezone('Africa/Johannesburg')
+
 def check_reminders():
     conn = get_connection()
     c = conn.cursor()
 
-    tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+    now_sast = datetime.now(SAST)
+    tomorrow = (now_sast + timedelta(days=1)).strftime('%Y-%m-%d')
 
     c.execute('''
         SELECT id, practice_name, patient_name, patient_number, appointment_time
