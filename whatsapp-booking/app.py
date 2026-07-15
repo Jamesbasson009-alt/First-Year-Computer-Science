@@ -102,6 +102,11 @@ def run_reminders():
     from check_reminders import check_reminders
     check_reminders()
     return "Reminders checked!"
-
+@app.route('/debug-time')
+def debug_time():
+    from datetime import datetime, timedelta
+    now = datetime.now()
+    tomorrow = now + timedelta(days=1)
+    return f"Server thinks now is: {now}, tomorrow is: {tomorrow.strftime('%Y-%m-%d')}"
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
