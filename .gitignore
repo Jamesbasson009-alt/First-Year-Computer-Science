@@ -21,3 +21,4 @@ build/
 #Zip folders for practical submissions
 *.zip
 *.env
+.env
