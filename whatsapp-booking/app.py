@@ -1,4 +1,7 @@
 import os
+import re
+from datetime import datetime
+import pytz
 from flask import Flask, request, render_template_string, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
@@ -11,8 +14,9 @@ app = Flask(__name__)
 
 twilio_client = Client(os.getenv('TWILIO_ACCOUNT_SID'), os.getenv('TWILIO_AUTH_TOKEN'))
 TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
+SAST = pytz.timezone('Africa/Johannesburg')
 
-FORM_HTML = '''
+FORM_HTML = r'''
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -211,6 +215,31 @@ FORM_HTML = '''
     padding: 9px 18px;
     margin-top: 0;
   }
+  .phone-row {
+    display: flex;
+    gap: 8px;
+  }
+  .phone-prefix {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 9px;
+    background: #F0EEE6;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14.5px;
+    font-family: 'Space Grotesk', sans-serif;
+    letter-spacing: 0.01em;
+  }
+  .phone-row input { flex: 1 1 auto; }
+  .field-hint {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
   .add-another:hover { background: var(--teal); color: #fff; }
 </style>
 </head>
@@ -229,10 +258,14 @@ FORM_HTML = '''
         <input type="text" name="patient_name" required placeholder="Jane Dlamini">
 
         <label>Patient WhatsApp number</label>
-        <input type="text" name="patient_number" required placeholder="+27821234567">
+        <div class="phone-row">
+          <span class="phone-prefix">+27</span>
+          <input type="text" name="patient_number_local" id="phoneLocal" required placeholder="82 123 4567" inputmode="numeric">
+        </div>
+        <div class="field-hint">With or without the leading 0 — either works.</div>
 
         <label>Appointment date &amp; time</label>
-        <input type="datetime-local" name="appointment_time" required>
+        <input type="datetime-local" name="appointment_time" id="apptTime" required>
 
         <button type="submit" id="submitBtn">
           <span class="spinner"></span>
@@ -261,14 +294,47 @@ const submitBtn = document.getElementById('submitBtn');
 const errorMsg = document.getElementById('errorMsg');
 const successPanel = document.getElementById('successPanel');
 const successDetail = document.getElementById('successDetail');
+const apptTime = document.getElementById('apptTime');
+
+// Keep the datetime picker from ever offering a past moment.
+function setMinDateTime() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  apptTime.min = now.toISOString().slice(0, 16);
+}
+setMinDateTime();
+apptTime.addEventListener('focus', setMinDateTime);
+
+function normalizeNumber(raw) {
+  // Strip everything but digits, then drop a single leading 0 if present.
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('0')) digits = digits.slice(1);
+  return digits;
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   errorMsg.style.display = 'none';
+
+  const localNumber = normalizeNumber(document.getElementById('phoneLocal').value);
+  if (localNumber.length !== 9) {
+    errorMsg.textContent = 'Enter a valid South African number, e.g. 82 123 4567.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  const chosen = new Date(apptTime.value);
+  if (chosen < new Date()) {
+    errorMsg.textContent = 'That date and time has already passed. Pick a future slot.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
   submitBtn.classList.add('loading');
   submitBtn.disabled = true;
 
   const data = Object.fromEntries(new FormData(form).entries());
+  data.patient_number = '+27' + localNumber;
 
   try {
     const res = await fetch('/add', {
@@ -284,12 +350,9 @@ form.addEventListener('submit', async (e) => {
     const niceDate = dt.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
     const niceTime = dt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
 
-
-const waLine = result.whatsapp_sent
+    const waLine = result.whatsapp_sent
       ? "Confirmation sent via WhatsApp."
       : "Saved, but the WhatsApp confirmation didn't send. Check the number.";
-
-
 
     successDetail.innerHTML = `<strong>${data.patient_name}</strong> &middot; ${niceDate} at ${niceTime}<br>${waLine}`;
     successPanel.classList.add('show');
@@ -322,6 +385,17 @@ def add_appointment():
 
         if not all([practice_name, patient_name, patient_number, appointment_time]):
             return jsonify({'error': 'All fields are required.'}), 400
+
+        if not re.fullmatch(r'\+27\d{9}', patient_number):
+            return jsonify({'error': 'Phone number must be a valid South African number.'}), 400
+
+        try:
+            appt_dt = datetime.strptime(appointment_time, '%Y-%m-%d %H:%M')
+        except ValueError:
+            return jsonify({'error': 'Invalid appointment date or time.'}), 400
+
+        if appt_dt < datetime.now(SAST).replace(tzinfo=None):
+            return jsonify({'error': "That date and time has already passed."}), 400
 
         conn = get_connection()
         c = conn.cursor()
