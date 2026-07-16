@@ -284,9 +284,12 @@ form.addEventListener('submit', async (e) => {
     const niceDate = dt.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
     const niceTime = dt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
 
-    const waLine = result.whatsapp_sent
-      ? 'Confirmation sent via WhatsApp.'
-      : 'Saved — but the WhatsApp confirmation didn\'t send. Check the number.';
+
+const waLine = result.whatsapp_sent
+      ? "Confirmation sent via WhatsApp."
+      : "Saved, but the WhatsApp confirmation didn't send. Check the number.";
+
+
 
     successDetail.innerHTML = `<strong>${data.patient_name}</strong> &middot; ${niceDate} at ${niceTime}<br>${waLine}`;
     successPanel.classList.add('show');
