@@ -1,8 +1,16 @@
+import os
 from flask import Flask, request, render_template_string, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
+from twilio.rest import Client
+from dotenv import load_dotenv
 from database import get_connection
 
+load_dotenv()
+
 app = Flask(__name__)
+
+twilio_client = Client(os.getenv('TWILIO_ACCOUNT_SID'), os.getenv('TWILIO_AUTH_TOKEN'))
+TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
 
 FORM_HTML = '''
 <!DOCTYPE html>
@@ -276,7 +284,11 @@ form.addEventListener('submit', async (e) => {
     const niceDate = dt.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
     const niceTime = dt.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
 
-    successDetail.innerHTML = `<strong>${data.patient_name}</strong> &middot; ${niceDate} at ${niceTime}<br>Reminder scheduled for the day before.`;
+    const waLine = result.whatsapp_sent
+      ? 'Confirmation sent via WhatsApp.'
+      : 'Saved — but the WhatsApp confirmation didn\'t send. Check the number.';
+
+    successDetail.innerHTML = `<strong>${data.patient_name}</strong> &middot; ${niceDate} at ${niceTime}<br>${waLine}`;
     successPanel.classList.add('show');
   } catch (err) {
     errorMsg.textContent = err.message;
@@ -317,7 +329,26 @@ def add_appointment():
         conn.commit()
         conn.close()
 
-        return jsonify({'status': 'ok'})
+        # Send an instant WhatsApp confirmation, but don't let a messaging
+        # failure block the booking itself from succeeding.
+        whatsapp_sent = True
+        try:
+            date_part, time_part = appointment_time.split(' ')
+            confirm_body = (
+                f"Hi {patient_name}, your appointment with {practice_name} on "
+                f"{date_part} at {time_part} has been booked. We'll send you a "
+                f"reminder the day before. Reply 2 anytime to reschedule."
+            )
+            twilio_client.messages.create(
+                from_=TWILIO_WHATSAPP_NUMBER,
+                body=confirm_body,
+                to=f'whatsapp:{patient_number}'
+            )
+        except Exception as e:
+            whatsapp_sent = False
+            print(f"Failed to send instant confirmation: {e}")
+
+        return jsonify({'status': 'ok', 'whatsapp_sent': whatsapp_sent})
 
     return render_template_string(FORM_HTML)
 
