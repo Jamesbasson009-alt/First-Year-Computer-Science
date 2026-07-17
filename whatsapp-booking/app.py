@@ -467,9 +467,13 @@ def whatsapp_reply():
 
 @app.route('/run-reminders')
 def run_reminders():
+    provided_key = request.args.get('key', '')
+    expected_key = os.getenv('REMINDER_SECRET', '')
+    if not expected_key or provided_key != expected_key:
+        return "Forbidden", 403
+
     from check_reminders import check_reminders
     check_reminders()
     return "Reminders checked!"
-
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
