@@ -245,7 +245,7 @@ FORM_HTML = r'''
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">Dr Smith Dental &middot; Booking Desk</div>
+    <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Dr Smith Dental &middot; Booking Desk</div>
     <h1>Add appointment</h1>
     <p class="sub">The patient gets a WhatsApp reminder automatically the day before.</p>
 
@@ -373,6 +373,96 @@ document.getElementById('addAnother').addEventListener('click', () => {
 </body>
 </html>
 '''
+
+HOME_HTML = r'''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16302B; --teal: #0F6B5C; --teal-dark: #0B5045;
+    --bg: #FAF8F3; --card: #FFFFFF; --line: #E4E0D6; --muted: #6B7570;
+    --success: #25D366;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, #00000008 1px, transparent 0);
+    background-size: 22px 22px;
+    font-family: 'Inter', sans-serif; color: var(--ink);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 440px; text-align: center; }
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 28px; font-weight: 700;
+    margin: 0 0 6px 0; letter-spacing: -0.01em;
+  }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 32px 0; }
+  .nav-grid { display: flex; flex-direction: column; gap: 14px; }
+  .nav-card {
+    display: flex; align-items: center; gap: 16px; text-align: left;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; text-decoration: none; color: var(--ink);
+    box-shadow: 0 1px 2px rgba(22,48,43,0.04), 0 8px 24px rgba(22,48,43,0.06);
+    transition: transform 0.12s ease, border-color 0.12s ease;
+  }
+  .nav-card:hover { transform: translateY(-2px); border-color: var(--teal); }
+  .nav-icon {
+    flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .nav-icon.add { background: #EAFBF1; }
+  .nav-icon.list { background: #EAF3FB; }
+  .nav-title {
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 15px; margin-bottom: 2px;
+  }
+  .nav-desc { color: var(--muted); font-size: 12.5px; }
+  .footer-note { margin-top: 28px; color: var(--muted); font-size: 11.5px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Booking Desk</div>
+    <h1>What would you like to do?</h1>
+    <p class="sub">WhatsApp reminders, handled automatically.</p>
+
+    <div class="nav-grid">
+      <a class="nav-card" href="/add">
+        <div class="nav-icon add">+</div>
+        <div>
+          <div class="nav-title">Add appointment</div>
+          <div class="nav-desc">Book a new patient in, WhatsApp confirmation sent instantly.</div>
+        </div>
+      </a>
+      <a class="nav-card" href="/appointments">
+        <div class="nav-icon list">&#9776;</div>
+        <div>
+          <div class="nav-title">View appointments</div>
+          <div class="nav-desc">See what's coming up and cancel if needed.</div>
+        </div>
+      </a>
+    </div>
+
+    <p class="footer-note">Reminders go out automatically the day before each appointment.</p>
+  </div>
+</body>
+</html>
+'''
+
+@app.route('/')
+def home():
+    return render_template_string(HOME_HTML)
+
 LIST_HTML = r'''
 <!DOCTYPE html>
 <html lang="en">
@@ -436,7 +526,7 @@ LIST_HTML = r'''
   <div class="wrap">
     <div class="top-row">
       <div>
-        <div class="eyebrow">Booking Desk</div>
+        <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Booking Desk</div>
         <h1>Upcoming appointments</h1>
       </div>
       <a class="add-link" href="/add">+ Add appointment</a>
@@ -535,6 +625,7 @@ def delete_appointment(appt_id):
     conn.commit()
     conn.close()
     return jsonify({'status': 'deleted'})
+
 @app.route('/add', methods=['GET', 'POST'])
 def add_appointment():
     if request.method == 'POST':
@@ -636,5 +727,6 @@ def run_reminders():
     from check_reminders import check_reminders
     check_reminders()
     return "Reminders checked!"
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
