@@ -49,6 +49,23 @@ def check_reminders():
         c.execute('UPDATE appointments SET reminder_sent = 1 WHERE id = %s', (appt_id,))
 
     conn.commit()
+
+    # Clean up appointments that are clearly in the past. A one-day grace
+    # period is kept so a patient can still reply on WhatsApp about an
+    # appointment that happened earlier today before it's removed.
+    cutoff = (now_sast - timedelta(days=1)).strftime('%Y-%m-%d %H:%M')
+    c.execute('''
+        DELETE FROM appointments
+        WHERE appointment_time < %s
+    ''', (cutoff,))
+    deleted_count = c.rowcount
+    conn.commit()
+
+    if deleted_count:
+        print(f"Cleared {deleted_count} past appointment(s).")
+    else:
+        print("No past appointments to clear.")
+
     conn.close()
 
 if __name__ == '__main__':
