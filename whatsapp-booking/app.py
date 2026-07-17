@@ -373,7 +373,168 @@ document.getElementById('addAnother').addEventListener('click', () => {
 </body>
 </html>
 '''
+LIST_HTML = r'''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appointments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16302B; --teal: #0F6B5C; --teal-dark: #0B5045;
+    --bg: #FAF8F3; --card: #FFFFFF; --line: #E4E0D6; --muted: #6B7570;
+    --success: #25D366; --success-bg: #EAFBF1; --error: #C0503E; --error-bg: #FBEEEC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg);
+    font-family: 'Inter', sans-serif; color: var(--ink); padding: 32px 20px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  .top-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 6px;
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .add-link {
+    background: var(--teal); color: #fff; text-decoration: none;
+    font-family: 'Space Grotesk', sans-serif; font-weight: 600; font-size: 13.5px;
+    padding: 10px 16px; border-radius: 8px; white-space: nowrap;
+  }
+  .add-link:hover { background: var(--teal-dark); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+    box-shadow: 0 1px 2px rgba(22,48,43,0.04), 0 8px 24px rgba(22,48,43,0.06); }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--line); background: #FBFAF6;
+  }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr.past td { color: var(--muted); }
+  .patient { font-weight: 600; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .badge.sent { background: var(--success-bg); color: #0C8C50; }
+  .badge.pending { background: #FFF4E0; color: #9A6B12; }
+  .del-btn {
+    background: transparent; border: 1.5px solid var(--error); color: var(--error);
+    border-radius: 7px; padding: 5px 11px; font-size: 12px; font-weight: 600; cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .del-btn:hover { background: var(--error); color: #fff; }
+  .empty { padding: 48px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <div class="eyebrow">Booking Desk</div>
+        <h1>Upcoming appointments</h1>
+      </div>
+      <a class="add-link" href="/add">+ Add appointment</a>
+    </div>
 
+    <div class="card">
+      {% if appointments %}
+      <table>
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Practice</th>
+            <th>When</th>
+            <th>Reminder</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in appointments %}
+          <tr class="{{ 'past' if a.is_past else '' }}" id="row-{{ a.id }}">
+            <td class="patient">{{ a.patient_name }}</td>
+            <td>{{ a.practice_name }}</td>
+            <td>{{ a.display_time }}</td>
+            <td>
+              {% if a.reminder_sent %}
+                <span class="badge sent">Sent</span>
+              {% else %}
+                <span class="badge pending">Pending</span>
+              {% endif %}
+            </td>
+            <td><button class="del-btn" onclick="deleteAppt({{ a.id }})">Cancel</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+        <div class="empty">No appointments yet. <a href="/add">Add the first one</a>.</div>
+      {% endif %}
+    </div>
+  </div>
+
+<script>
+async function deleteAppt(id) {
+  if (!confirm('Cancel this appointment?')) return;
+  const res = await fetch('/appointments/' + id, { method: 'DELETE' });
+  if (res.ok) {
+    document.getElementById('row-' + id).remove();
+  } else {
+    alert('Could not cancel that appointment.');
+  }
+}
+</script>
+</body>
+</html>
+'''
+
+@app.route('/appointments')
+def list_appointments():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('''
+        SELECT id, practice_name, patient_name, patient_number, appointment_time, reminder_sent
+        FROM appointments
+        ORDER BY appointment_time ASC
+    ''')
+    rows = c.fetchall()
+    conn.close()
+
+    now = datetime.now(SAST).replace(tzinfo=None)
+    appointments = []
+    for row in rows:
+        appt_id, practice, patient, number, appt_time, reminder_sent = row
+        try:
+            dt = datetime.strptime(appt_time, '%Y-%m-%d %H:%M')
+            display_time = dt.strftime('%a %d %b, %H:%M')
+            is_past = dt < now
+        except ValueError:
+            display_time = appt_time
+            is_past = False
+        appointments.append({
+            'id': appt_id,
+            'practice_name': practice,
+            'patient_name': patient,
+            'display_time': display_time,
+            'reminder_sent': bool(reminder_sent),
+            'is_past': is_past,
+        })
+
+    return render_template_string(LIST_HTML, appointments=appointments)
+
+@app.route('/appointments/<int:appt_id>', methods=['DELETE'])
+def delete_appointment(appt_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM appointments WHERE id = %s', (appt_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'deleted'})
 @app.route('/add', methods=['GET', 'POST'])
 def add_appointment():
     if request.method == 'POST':
