@@ -1,20 +1,146 @@
 import os
 import re
 from datetime import datetime
+from functools import wraps
 import pytz
-from flask import Flask, request, render_template_string, jsonify
+from flask import Flask, request, render_template_string, jsonify, session, redirect, url_for
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
 from dotenv import load_dotenv
+from werkzeug.security import check_password_hash
 from database import get_connection
 
 load_dotenv()
 
 app = Flask(__name__)
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-only-fallback-change-me')
 
 twilio_client = Client(os.getenv('TWILIO_ACCOUNT_SID'), os.getenv('TWILIO_AUTH_TOKEN'))
 TWILIO_WHATSAPP_NUMBER = os.getenv('TWILIO_WHATSAPP_NUMBER')
 SAST = pytz.timezone('Africa/Johannesburg')
+
+def login_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login', next=request.path))
+        return f(*args, **kwargs)
+    return wrapped
+
+def admin_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login', next=request.path))
+        if session.get('role') != 'admin':
+            return "Forbidden — admin access only.", 403
+        return f(*args, **kwargs)
+    return wrapped
+
+LOGIN_HTML = r'''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16302B; --teal: #0F6B5C; --teal-dark: #0B5045;
+    --bg: #FAF8F3; --card: #FFFFFF; --line: #E4E0D6; --muted: #6B7570; --error: #C0503E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, #00000008 1px, transparent 0);
+    background-size: 22px 22px;
+    font-family: 'Inter', sans-serif; color: var(--ink);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  .wrap { width: 100%; max-width: 380px; }
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; text-align: center;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;
+    margin: 0 0 24px 0; letter-spacing: -0.01em; text-align: center;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 28px;
+    box-shadow: 0 1px 2px rgba(22,48,43,0.04), 0 8px 24px rgba(22,48,43,0.06);
+  }
+  label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; margin-top: 16px; }
+  label:first-of-type { margin-top: 0; }
+  input {
+    width: 100%; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 9px;
+    font-family: 'Inter', sans-serif; font-size: 14.5px; background: #FCFBF8;
+  }
+  input:focus { outline: none; border-color: var(--teal); background: #fff; }
+  button {
+    width: 100%; margin-top: 22px; padding: 13px; background: var(--teal); color: #fff; border: none;
+    border-radius: 9px; font-family: 'Space Grotesk', sans-serif; font-size: 14.5px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { background: var(--teal-dark); }
+  .error-msg {
+    background: #FBEEEC; border: 1px solid #EBCFC8; color: var(--error);
+    font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="eyebrow">Booking Desk</div>
+    <h1>Log in</h1>
+    <div class="card">
+      <form method="POST">
+        <label>Username</label>
+        <input type="text" name="username" required autofocus>
+        <label>Password</label>
+        <input type="password" name="password" required>
+        <button type="submit">Log in</button>
+      </form>
+      {% if error %}
+        <div class="error-msg">{{ error }}</div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>
+'''
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute('SELECT id, password_hash, role FROM users WHERE username = %s', (username,))
+        user = c.fetchone()
+        conn.close()
+
+        if user and check_password_hash(user[1], password):
+            session['user_id'] = user[0]
+            session['username'] = username
+            session['role'] = user[2]
+            next_url = request.args.get('next')
+            if user[2] == 'admin':
+                return redirect(next_url or url_for('admin_dashboard'))
+            return redirect(next_url or url_for('home'))
+        else:
+            error = 'Incorrect username or password.'
+
+    return render_template_string(LOGIN_HTML, error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
 
 FORM_HTML = r'''
 <!DOCTYPE html>
@@ -428,11 +554,14 @@ HOME_HTML = r'''
   }
   .nav-desc { color: var(--muted); font-size: 12.5px; }
   .footer-note { margin-top: 28px; color: var(--muted); font-size: 11.5px; }
+  .logout-link { display: block; margin-top: 18px; color: var(--muted); text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .logout-link:hover { color: var(--error, #C0503E); }
+  .nav-icon.admin { background: #FDF1E6; }
 </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">Booking Desk</div>
+    <div class="eyebrow">Booking Desk &middot; {{ username }}</div>
     <h1>What would you like to do?</h1>
     <p class="sub">WhatsApp reminders, handled automatically.</p>
 
@@ -451,17 +580,192 @@ HOME_HTML = r'''
           <div class="nav-desc">See what's coming up and cancel if needed.</div>
         </div>
       </a>
+      {% if role == 'admin' %}
+      <a class="nav-card" href="/admin">
+        <div class="nav-icon admin">&#9881;</div>
+        <div>
+          <div class="nav-title">Admin tools</div>
+          <div class="nav-desc">Run reminders manually, view stats.</div>
+        </div>
+      </a>
+      {% endif %}
     </div>
 
     <p class="footer-note">Reminders go out automatically the day before each appointment.</p>
+    <a class="logout-link" href="/logout">Log out</a>
   </div>
 </body>
 </html>
 '''
 
+ADMIN_HTML = r'''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #16302B; --teal: #0F6B5C; --teal-dark: #0B5045;
+    --bg: #FAF8F3; --card: #FFFFFF; --line: #E4E0D6; --muted: #6B7570;
+    --success: #25D366; --success-bg: #EAFBF1; --error: #C0503E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: var(--bg);
+    font-family: 'Inter', sans-serif; color: var(--ink); padding: 32px 20px;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  .top-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .eyebrow {
+    font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--teal); margin-bottom: 6px;
+  }
+  h1 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .logout-link {
+    color: var(--muted); text-decoration: none; font-size: 13px; font-weight: 600;
+  }
+  .logout-link:hover { color: var(--error); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px;
+    box-shadow: 0 1px 2px rgba(22,48,43,0.04), 0 8px 24px rgba(22,48,43,0.06);
+  }
+  .stat-num { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(22,48,43,0.04), 0 8px 24px rgba(22,48,43,0.06);
+  }
+  .card h2 { font-family: 'Space Grotesk', sans-serif; font-size: 15px; margin: 0 0 6px 0; }
+  .card p { color: var(--muted); font-size: 13px; margin: 0 0 14px 0; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--teal); color: #fff; border: none; text-decoration: none;
+    padding: 10px 16px; border-radius: 8px; font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600; font-size: 13.5px; cursor: pointer;
+  }
+  .btn:hover { background: var(--teal-dark); }
+  .btn.secondary { background: transparent; color: var(--teal); border: 1.5px solid var(--teal); }
+  .btn.secondary:hover { background: var(--teal); color: #fff; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .result-box {
+    margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; display: none;
+  }
+  .result-box.ok { background: var(--success-bg); color: #0C8C50; display: block; }
+  .result-box.err { background: #FBEEEC; color: var(--error); display: block; }
+  .spinner {
+    width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+    border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+  }
+  .btn.loading .spinner { display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top-row">
+      <div>
+        <div class="eyebrow">Admin &middot; {{ username }}</div>
+        <h1>Testing tools</h1>
+      </div>
+      <a class="logout-link" href="/logout">Log out</a>
+    </div>
+
+    <div class="grid">
+      <div class="stat-card">
+        <div class="stat-num">{{ total }}</div>
+        <div class="stat-label">Total appointments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ pending }}</div>
+        <div class="stat-label">Reminders pending</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">{{ sent }}</div>
+        <div class="stat-label">Reminders sent</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Run reminders now</h2>
+      <p>Manually triggers the same check GitHub Actions runs daily — sends any due reminders and clears old appointments.</p>
+      <div class="btn-row">
+        <button class="btn" id="runRemindersBtn" onclick="runReminders()">
+          <span class="spinner"></span>
+          <span>Run reminders</span>
+        </button>
+      </div>
+      <div class="result-box" id="reminderResult"></div>
+    </div>
+
+    <div class="card">
+      <h2>Go to</h2>
+      <div class="btn-row">
+        <a class="btn secondary" href="/add">Add appointment</a>
+        <a class="btn secondary" href="/appointments">View appointments</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function runReminders() {
+  const btn = document.getElementById('runRemindersBtn');
+  const result = document.getElementById('reminderResult');
+  btn.classList.add('loading');
+  btn.disabled = true;
+  result.style.display = 'none';
+
+  try {
+    const res = await fetch('/admin/run-reminders', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    result.textContent = data.message;
+    result.className = 'result-box ok';
+  } catch (err) {
+    result.textContent = err.message;
+    result.className = 'result-box err';
+  } finally {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
+'''
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('SELECT COUNT(*) FROM appointments')
+    total = c.fetchone()[0]
+    c.execute('SELECT COUNT(*) FROM appointments WHERE reminder_sent = 0')
+    pending = c.fetchone()[0]
+    c.execute('SELECT COUNT(*) FROM appointments WHERE reminder_sent = 1')
+    sent = c.fetchone()[0]
+    conn.close()
+    return render_template_string(ADMIN_HTML, username=session.get('username'), total=total, pending=pending, sent=sent)
+
+@app.route('/admin/run-reminders', methods=['POST'])
+@admin_required
+def admin_run_reminders():
+    from check_reminders import check_reminders
+    try:
+        check_reminders()
+        return jsonify({'message': 'Reminders checked and past appointments cleared.'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/')
+@login_required
 def home():
-    return render_template_string(HOME_HTML)
+    return render_template_string(HOME_HTML, username=session.get('username'), role=session.get('role'))
 
 LIST_HTML = r'''
 <!DOCTYPE html>
@@ -584,6 +888,7 @@ async function deleteAppt(id) {
 '''
 
 @app.route('/appointments')
+@login_required
 def list_appointments():
     conn = get_connection()
     c = conn.cursor()
@@ -618,6 +923,7 @@ def list_appointments():
     return render_template_string(LIST_HTML, appointments=appointments)
 
 @app.route('/appointments/<int:appt_id>', methods=['DELETE'])
+@login_required
 def delete_appointment(appt_id):
     conn = get_connection()
     c = conn.cursor()
@@ -627,6 +933,7 @@ def delete_appointment(appt_id):
     return jsonify({'status': 'deleted'})
 
 @app.route('/add', methods=['GET', 'POST'])
+@login_required
 def add_appointment():
     if request.method == 'POST':
         data = request.get_json(silent=True) or request.form
