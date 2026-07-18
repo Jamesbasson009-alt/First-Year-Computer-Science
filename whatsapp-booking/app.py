@@ -43,7 +43,7 @@ LOGIN_HTML = r'''
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Log in</title>
+<title>Bookly — Log in</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -92,7 +92,7 @@ LOGIN_HTML = r'''
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">Booking Desk</div>
+    <div class="eyebrow">Bookly</div>
     <h1>Log in</h1>
     <div class="card">
       <form method="POST">
@@ -148,7 +148,7 @@ FORM_HTML = r'''
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Add Appointment</title>
+<title>Bookly — Add Appointment</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -371,7 +371,7 @@ FORM_HTML = r'''
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Dr Smith Dental &middot; Booking Desk</div>
+    <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Bookly</div>
     <h1>Add appointment</h1>
     <p class="sub">The patient gets a WhatsApp reminder automatically the day before.</p>
 
@@ -506,7 +506,7 @@ HOME_HTML = r'''
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Booking Desk</title>
+<title>Bookly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -561,7 +561,7 @@ HOME_HTML = r'''
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">Booking Desk &middot; {{ username }}</div>
+    <div class="eyebrow">Bookly &middot; {{ username }}</div>
     <h1>What would you like to do?</h1>
     <p class="sub">WhatsApp reminders, handled automatically.</p>
 
@@ -604,7 +604,7 @@ ADMIN_HTML = r'''
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin</title>
+<title>Bookly — Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -669,7 +669,7 @@ ADMIN_HTML = r'''
   <div class="wrap">
     <div class="top-row">
       <div>
-        <div class="eyebrow">Admin &middot; {{ username }}</div>
+        <div class="eyebrow">Bookly Admin &middot; {{ username }}</div>
         <h1>Testing tools</h1>
       </div>
       <a class="logout-link" href="/logout">Log out</a>
@@ -773,7 +773,7 @@ LIST_HTML = r'''
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Appointments</title>
+<title>Bookly — Appointments</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -830,7 +830,7 @@ LIST_HTML = r'''
   <div class="wrap">
     <div class="top-row">
       <div>
-        <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Booking Desk</div>
+        <div class="eyebrow"><a href="/" style="color:inherit;text-decoration:none;">&larr;</a> Bookly</div>
         <h1>Upcoming appointments</h1>
       </div>
       <a class="add-link" href="/add">+ Add appointment</a>
