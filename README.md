@@ -1,10 +1,10 @@
-# First Year C++ Projects
+# First Year Projects and Practicals
 
-A collection of my C++ projects and practicals from first year.
+A collection of my projects and practicals from first year BSC Computer Science.
 
 ## Projects
 
-- Render deployed Whatsapp booking tool that sends confirmations and reminders before appointments.
+- Render deployed WhatsApp booking tool that sends confirmations and reminders before appointments.
 
 ## Practicals
 
@@ -14,12 +14,6 @@ Weekly practical assignments covering:
 - Functions
 - Arrays and pointers
 - File I/O
-
-## How to Compile
-```bash
-g++ -o output filename.cpp
-./output
-```
 
 ## Author
 
