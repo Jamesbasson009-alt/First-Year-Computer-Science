@@ -1,0 +1,67 @@
+aaa
+aab
+aba
+abb
+baa
+bab
+bba
+bbb
+
+[Statistics]
+Total combinations: 8
+Max recursion depth: 3
+All prefixes: 6
+==============================================
+Calling Summation(3, 5)
+  Calling Summation(4, 5)
+    Calling Summation(5, 5)
+      Calling Summation(6, 5)
+      Base case: return 0
+    Returning 5 + 0 = 5
+  Returning 4 + 5 = 9
+Returning 3 + 9 = 12
+
+Result: 12
+==============================================
+Calling power(3, 5)
+  Calling power(3, 4)
+    Calling power(3, 3)
+      Calling power(3, 2)
+        Calling power(3, 1)
+          Calling power(3, 0)
+          Base case: power(3, 0) = 1
+        Returning 3 * 1 = 3 for power(3, 1)
+      Returning 3 * 3 = 9 for power(3, 2)
+    Returning 3 * 9 = 27 for power(3, 3)
+  Returning 3 * 27 = 81 for power(3, 4)
+Returning 3 * 81 = 243 for power(3, 5)
+
+Result: 243
+==============================================
+Calling gcd(3, 5)
+  Calling gcd(5, 3)
+    Calling gcd(3, 2)
+      Calling gcd(2, 1)
+        Calling gcd(1, 0)
+        Base case: gcd(1, 0) = 1
+      Returning gcd(1, 0) = 1 for gcd(2, 1)
+    Returning gcd(2, 1) = 1 for gcd(3, 2)
+  Returning gcd(3, 2) = 1 for gcd(5, 3)
+Returning gcd(5, 3) = 1 for gcd(3, 5)
+
+Result: 1
+==============================================
+Caught exception: Set pointer is NULL
+==============================================
+Caught exception: Set cannot be empty
+==============================================
+Caught exception: k must be non-negative
+==============================================
+Caught exception: Lower bound cannot be greater than upper bound
+==============================================
+Caught exception: Range too large (max 10000)
+==============================================
+Caught exception: Negative exponent not supported
+==============================================
+Caught exception: Both numbers cannot be zero
+==============================================
