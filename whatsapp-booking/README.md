@@ -1,6 +1,6 @@
 # WhatsApp Booking
 
-Live demo: https://whatsapp-booking-osmf.onrender.com
+Live demo: https://whatsapp-booking-osmf.onrender.com (WhatsApp messages won't work for any users other than me due to using Twilio's free plan)
 
 A small scheduling app for creating and sending booking confirmations via WhatsApp links. Built with Flask and designed to store appointments and users in a PostgreSQL database. Includes helper scripts for creating users, adding test data, sending test messages, and checking/sending reminders.
 
@@ -15,4 +15,11 @@ A small scheduling app for creating and sending booking confirmations via WhatsA
 - Framework: Flask
 - Notable libraries: Flask, psycopg2 (Postgres), python-dotenv, twilio, gunicorn
 
-## Repo layout (important files)
+## Credentials
+ADMIN
+- Username - admin
+- Password - admin
+USER
+- Username - user
+- Password - user
+
