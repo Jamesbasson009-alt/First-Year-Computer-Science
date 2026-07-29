@@ -19,6 +19,7 @@ A small scheduling app for creating and sending booking confirmations via WhatsA
 ADMIN
 - Username - admin
 - Password - admin
+
 USER
 - Username - user
 - Password - user
