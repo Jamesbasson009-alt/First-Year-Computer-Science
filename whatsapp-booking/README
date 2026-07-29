@@ -1,4 +1,10 @@
+My First Project: A WhatsApp-integrated booking system that automatically sends out confirmations and reminders 24 hours before using a script that checks the DB every day to see what reminders need to be sent out.
+
+Has full WhatsApp integration, but due to Twilio's free plan, only whitelisted users will receive WhatsApp messages.
+
 Visit https://whatsapp-booking-osmf.onrender.com to see the deployed site.
+
+
 
 USER
 Username: user
