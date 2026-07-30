@@ -2,6 +2,13 @@
 
 using namespace std;
 
+static string intToString(int num)
+{
+    stringstream ss;
+    ss << num;
+    return ss.str();
+}
+
 void validateInput(char set[], int k, int n) {
 
     if (set == NULL) {
@@ -22,22 +29,78 @@ void validateInput(char set[], int k, int n) {
 
 }
 
-string printAllKLength(char set[], int k, int n) {
-    string result;
-    Statistics s;
-    s.allPrefixes = 0;
-    s.maxDepth = 0;
-    s.totalCombinations = 0;
 
-    try {
-        validateInput(set, k, n);
-        
+static void generateHelper(char set[], int n, int k, string current, int depth, Statistics &stats, string &result);
+
+
+static void tryChars(char set[], int n, int k, string prefix, int depth, int charIndex, Statistics &stats, string &result)
+{
+    if (charIndex >= n)
+    {
+        return;
     }
 
+    string newPrefix = prefix + set[charIndex];
+    generateHelper(set, n, k, newPrefix, depth + 1, stats, result);
+
+    tryChars(set, n, k, prefix, depth, charIndex + 1, stats, result);
 }
 
-static string intToString(int num) {
-    stringstream ss;
-    ss << num;
-    return ss.str();
+
+static void generateHelper(char set[], int n, int k, string current, int depth, Statistics &stats, string &result)
+{
+    if (depth > stats.maxDepth)
+    {
+        stats.maxDepth = depth;
+    }
+
+    if (depth == k)
+    {
+        stats.totalCombinations++;
+        result += current + "\n";
+        return;
+    }
+
+    if (depth > 0)
+    {
+        stats.allPrefixes++;
+    }
+
+    tryChars(set, n, k, current, depth, 0, stats, result);
 }
+
+string printAllKLength(char set[], int k, int n)
+{
+    try
+    {
+        validateInput(set, k, n);
+
+        Statistics stats;
+        stats.totalCombinations = 0;
+        stats.maxDepth = 0;
+        stats.allPrefixes = 0;
+
+        string result;
+        generateHelper(set, n, k, "", 0, stats, result);
+
+        result += "[Statistics]\n";
+        result += "Total combinations: " + intToString(stats.totalCombinations) + "\n";
+        result += "Max recursion depth: " + intToString(stats.maxDepth) + "\n";
+        result += "All prefixes: " + intToString(stats.allPrefixes) + "\n";
+
+        return result;
+    }
+    catch (NullPointerError &e)
+    {
+        return e.message;
+    }
+    catch (EmptySetError &e)
+    {
+        return e.message;
+    }
+    catch (NegativeKError &e)
+    {
+        return e.message;
+    }
+}
+

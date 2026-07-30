@@ -67,23 +67,95 @@ string calculate_summation(int lower, int upper)
 
 static int calculate_power(int base, int exponent, int level, string &trace)
 {
-
-    trace += getIndent(level) + "Calling Power(" + intToString(base) + ", " + intToString(exponent) + ")\n";
+    trace += getIndent(level) + "Calling power(" + intToString(base) + ", " + intToString(exponent) + ")\n";
 
     if (exponent == 0)
     {
-        trace += getIndent(level) + "Base case: return 1\n";
+        trace += getIndent(level) + "Base case: power(" + intToString(base) + ", 0) = 1\n";
         return 1;
     }
 
     int subResult = calculate_power(base, exponent - 1, level + 1, trace);
     int result = base * subResult;
 
-    trace += getIndent(level) + "Returning " + intToString(base) + " * " + intToString(subResult) + " = " + intToString(result) + "\n";
+    trace += getIndent(level) + "Returning " + intToString(base) + " * " + intToString(subResult) + " = " + intToString(result) + " for power(" + intToString(base) + ", " + intToString(exponent) + ")\n";
 
     return result;
 }
 
-string calculate_power(int base, int exponent) {
-    
+string calculate_power(int base, int exponent)
+{
+    try
+    {
+        if (exponent < 0)
+        {
+            NegativeExponentError e;
+            e.message = "Caught exception: Negative exponent not supported\n";
+            throw e;
+        }
+
+        std::string trace;
+        int result = calculate_power(base, exponent, 0, trace);
+        trace += "\nResult: " + intToString(result) + "\n";
+        return trace;
+    }
+    catch (NegativeExponentError &e)
+    {
+        return e.message;
+    }
 }
+
+static int calculate_gcd(int a, int b, int level, string &trace)
+{
+
+    trace += getIndent(level) + "Calling gcd(" + intToString(a) + ", " + intToString(b) + ")\n";
+
+    if (b == 0)
+    {
+
+        trace += getIndent(level) + "Base case: gcd(" + intToString(a) + ", 0) = " + intToString(a) + "\n";
+        return a;
+    }
+
+    int subA = b;
+    int subB = a % b;
+    int result = calculate_gcd(subA, subB, level + 1, trace);
+
+    trace += getIndent(level) + "Returning gcd(" + intToString(subA) + ", " + intToString(subB) + ") = " + intToString(result) + " for gcd(" + intToString(a) + ", " + intToString(b) + ")\n";
+
+    return result;
+}
+
+string calculate_gcd(int a, int b)
+{
+    try
+    {
+        if (a == 0 && b == 0)
+        {
+            ZeroDivisionError e;
+            e.message = "Caught exception: Both numbers cannot be zero\n";
+            throw e;
+        }
+
+        if (a < 0)
+        {
+            a = -a;
+        }
+        if (b < 0)
+        {
+            b = -b;
+        }
+
+        std::string trace;
+        int result = calculate_gcd(a, b, 0, trace);
+        trace += "\nResult: " + intToString(result) + "\n";
+        return trace;
+    }
+    catch (ZeroDivisionError &e)
+    {
+        return e.message;
+    }
+}
+
+
+
