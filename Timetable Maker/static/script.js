@@ -1,4 +1,7 @@
-async function uploadPdf(file) {
+const STATUS = document.getElementById('status');
+const DOWNLOAD = document.getElementById('download-json');
+
+async function uploadPdf(file, onProgress) {
   const fd = new FormData();
   fd.append('file', file);
   const res = await fetch('/upload', { method: 'POST', body: fd });
@@ -16,7 +19,7 @@ async function generateTimetable(filename) {
 
 function renderParsed(parsed) {
   const out = document.getElementById('parsed');
-  out.textContent = JSON.stringify(parsed, null, 2);
+  out.textContent = Array.isArray(parsed) ? JSON.stringify(parsed, null, 2) : String(parsed);
 }
 
 function renderSolution(solution) {
@@ -26,22 +29,20 @@ function renderSolution(solution) {
     container.textContent = 'No solution found.';
     return;
   }
-  // simple day columns
   const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
   const grid = document.createElement('div');
-  grid.className = 'grid';
+  grid.className = 'grid-days';
   days.forEach(d => {
     const col = document.createElement('div');
-    col.className = 'col';
+    col.className = 'day-col';
     const title = document.createElement('div');
-    title.className = 'col-title';
+    title.className = 'day-title';
     title.textContent = d;
     col.appendChild(title);
     grid.appendChild(col);
   });
   container.appendChild(grid);
 
-  // place events
   Object.entries(solution).forEach(([course,opt]) => {
     if (!opt || !opt.day) return;
     const dayIdx = days.findIndex(d => opt.day.startsWith(d));
@@ -49,46 +50,49 @@ function renderSolution(solution) {
     const col = grid.children[dayIdx];
     const ev = document.createElement('div');
     ev.className = 'event';
-    const start = parseTime(opt.start);
-    const end = parseTime(opt.end);
-    const top = ((start - 8*60) / (10*60)) * 100; // within 8:00-18:00
-    const height = ((end - start) / (10*60)) * 100;
-    ev.style.top = top + '%';
-    ev.style.height = Math.max(4, height) + '%';
     ev.textContent = course + ' ' + (opt.group||'') + ' ' + (opt.type||'');
+    // simple stacking: append in order
+    ev.style.position = 'relative';
+    ev.style.margin = '6px 0';
     col.appendChild(ev);
   });
 }
 
-function parseTime(t) {
-  if (!t) return 0;
-  if (typeof t === 'number') return t;
-  const parts = t.split(':');
-  if (parts.length === 1) return parseInt(parts[0]) * 60;
-  return parseInt(parts[0])*60 + parseInt(parts[1]);
+function enableDownload(data){
+  DOWNLOAD.disabled = false;
+  DOWNLOAD.onclick = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'timetable_parsed.json'; a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('upload-form');
   const fileInput = document.getElementById('file');
   const parsedPre = document.getElementById('parsed');
-  const resultPre = document.getElementById('result');
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = fileInput.files[0];
     if (!f) return alert('Choose a PDF first.');
-    resultPre.textContent = 'Uploading...';
-    const info = await uploadPdf(f);
-    resultPre.textContent = JSON.stringify(info, null, 2);
-    // attempt generate
-    resultPre.textContent = 'Generating timetable...';
-    const out = await generateTimetable(info.filename);
-    if (out.error) {
-      resultPre.textContent = 'Error: ' + JSON.stringify(out);
-      return;
+    STATUS.textContent = 'Uploading...';
+    try{
+      const info = await uploadPdf(f);
+      STATUS.textContent = 'Uploaded — generating...';
+      const out = await generateTimetable(info.filename);
+      if (out.error) {
+        STATUS.textContent = 'Error: ' + (out.message || out.error);
+        renderParsed(out.details || out);
+        return;
+      }
+      STATUS.textContent = 'Done — timetable generated.';
+      renderParsed(out.parsed || out);
+      renderSolution(out.solution);
+      enableDownload(out);
+    }catch(err){
+      STATUS.textContent = 'Failed: ' + String(err);
     }
-    renderParsed(out.parsed || []);
-    renderSolution(out.solution);
-    resultPre.textContent = 'Done.';
   });
 });

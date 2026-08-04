@@ -2,33 +2,48 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Timetable Maker — Upload & Generate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
   </head>
   <body>
-    <main>
-      <h1>Timetable Maker</h1>
+    <header class="site-header">
+      <div class="container">
+        <h1>Timetable Maker</h1>
+        <p class="tagline">Upload your module PDF and generate a clash-free timetable</p>
+      </div>
+    </header>
 
-      <section class="panel">
-        <h2>Upload PDF</h2>
-        <form id="upload-form">
+    <main class="container main-grid">
+      <aside class="panel card">
+        <h2>Upload</h2>
+        <p class="muted">Choose the PDF your university provided. The app will attempt to parse groups and create a clash-free schedule.</p>
+        <form id="upload-form" class="upload-form">
           <input type="file" id="file" name="file" accept="application/pdf" />
-          <button type="submit">Upload & Generate</button>
+          <div class="actions">
+            <button type="submit" class="btn primary">Upload & Generate</button>
+            <button id="download-json" class="btn" disabled>Download JSON</button>
+          </div>
         </form>
-        <pre id="result" class="result">No action yet.</pre>
+        <div id="status" class="status">Idle</div>
+      </aside>
+
+      <section class="panel card">
+        <h2>Timetable Preview</h2>
+        <div id="timetable" class="timetable">No timetable yet — upload a PDF to begin.</div>
       </section>
 
-      <section class="panel">
+      <section class="panel card large">
         <h2>Parsed Entries</h2>
         <pre id="parsed" class="parsed">(parsed output will appear here)</pre>
       </section>
-
-      <section class="panel">
-        <h2>Timetable</h2>
-        <div id="timetable" class="timetable">(solution will appear here)</div>
-      </section>
-
     </main>
+
+    <footer class="site-footer">
+      <div class="container">Built with ❤️ — Timetable Maker</div>
+    </footer>
+
     <script src="/static/script.js"></script>
   </body>
 </html>
