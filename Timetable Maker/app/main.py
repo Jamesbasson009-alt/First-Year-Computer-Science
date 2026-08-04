@@ -35,6 +35,7 @@ from app.solver import generate_timetable_from_parsed
 async def generate(request: Request):
     payload = await request.json() if request.headers.get('content-type','').startswith('application/json') else {}
     filename = payload.get('filename')
+    semester = payload.get('semester')  # optional: filter by semester
     # if filename provided, try to parse using parser, otherwise expect parsed rows in payload
     parsed_rows = payload.get('parsed')
     if not parsed_rows:
@@ -47,6 +48,17 @@ async def generate(request: Request):
                 return JSONResponse({'error': 'parser-failed', 'details': str(e)})
         else:
             return JSONResponse({'error': 'no-input', 'message': 'Provide "filename" or "parsed" in JSON payload'})
+
+    # If semester specified, filter parsed rows by semester (normalized)
+    if semester:
+        try:
+            from app.parser import normalize_sem
+            sem_n = normalize_sem(str(semester))
+            parsed_rows = [r for r in parsed_rows if r.get('semester') and r.get('semester') == sem_n]
+        except Exception:
+            # if normalization not available, perform simple filter
+            parsed_rows = [r for r in parsed_rows if r.get('semester') == semester]
+
     result = generate_timetable_from_parsed(parsed_rows)
     # include parsed rows for UI convenience
     result['parsed'] = parsed_rows

@@ -24,6 +24,21 @@ from typing import List, Dict
 TIME_RE = re.compile(r"(\d{1,2}:?\d{0,2})\s*(?:-|to|–|\u2013|\u2014)\s*(\d{1,2}:?\d{0,2})")
 ROW_LIKE = re.compile(r"(?P<course>[A-Z]{2,}\s*\d{3,})[\s,:-]+(?P<type>LEC|TUT|PRA|LAB|LECTURE|TUTORIAL|PRACTICAL|TUTORIAL)\s*(?P<group>\w+)?", re.I)
 DAY_WORDS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun","Monday","Tuesday","Wednesday","Thursday","Friday"]
+SEM_RE = re.compile(r"(?:Offered|Semester|Sem|Sem\.)[:\s]*([Ss]?\d+|[12]|First|Second)", re.I)
+
+def normalize_sem(s: str) -> str:
+    if not s:
+        return ''
+    s = s.strip().lower()
+    if s.startswith('s') and s[1:].isdigit():
+        return s[1:]
+    if s.isdigit():
+        return s
+    if 'first' in s:
+        return '1'
+    if 'second' in s:
+        return '2'
+    return s.upper()
 
 
 def extract_text(path: Path) -> str:
@@ -120,6 +135,12 @@ def parse_rows_from_text(text: str) -> List[Dict]:
         if loc_search:
             loc = loc_search.group(0)
 
+        # semester / offered detection
+        sem = None
+        sem_m = SEM_RE.search(combined)
+        if sem_m:
+            sem = normalize_sem(sem_m.group(1))
+
         results.append({
             "course": course,
             "type": typ,
@@ -128,6 +149,7 @@ def parse_rows_from_text(text: str) -> List[Dict]:
             "start": start,
             "end": end,
             "location": loc,
+            "semester": sem,
             "raw": line,
         })
 
