@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: timetable-maker
+    env: docker
+    dockerfilePath: Dockerfile
+    instanceType: starter
+    plan: free
+    region: oregon
+    buildCommand: ''
+    startCommand: ''
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: "10000"
