@@ -21,8 +21,8 @@ import re
 from pathlib import Path
 from typing import List, Dict
 
-TIME_RE = re.compile(r"(\d{1,2}:?\d{0,2})\s*(?:-|to|–)\s*(\d{1,2}:?\d{0,2})")
-ROW_LIKE = re.compile(r"(?P<course>[A-Z]{2,}\s*\d{3,})\s+(?P<type>LEC|TUT|PRA|LAB|LECTURE|TUTORIAL|PRACTICAL)\s*(?P<group>\w+)?", re.I)
+TIME_RE = re.compile(r"(\d{1,2}:?\d{0,2})\s*(?:-|to|–|\u2013|\u2014)\s*(\d{1,2}:?\d{0,2})")
+ROW_LIKE = re.compile(r"(?P<course>[A-Z]{2,}\s*\d{3,})[\s,:-]+(?P<type>LEC|TUT|PRA|LAB|LECTURE|TUTORIAL|PRACTICAL|TUTORIAL)\s*(?P<group>\w+)?", re.I)
 DAY_WORDS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun","Monday","Tuesday","Wednesday","Thursday","Friday"]
 
 
@@ -55,52 +55,82 @@ def normalize_time(s: str) -> str:
 
 
 def parse_rows_from_text(text: str) -> List[Dict]:
-    """Heuristic parsing: split on lines and look for patterns that indicate rows.
-    This will need tuning for your specific PDF layout.
+    """Heuristic parsing: use line tokenization and table-like detection.
+
+    Strategy:
+    - Split pages into lines, group lines with similar column counts.
+    - For each line, try regex matches for course/type and time/day tokens.
+    - Return best-effort rows.
     """
     results = []
     lines = [l.strip() for l in text.splitlines() if l.strip()]
-    for i, line in enumerate(lines):
-        # look for a course code + type
+
+    # quick pass: try to find contiguous table-like blocks (lines with digits/time)
+    candidate_lines = []
+    for line in lines:
+        if re.search(r"\d{1,2}:?\d{0,2}", line) or ROW_LIKE.search(line):
+            candidate_lines.append(line)
+
+    for i, line in enumerate(candidate_lines):
         m = ROW_LIKE.search(line)
-        if m:
+        if not m:
+            # sometimes course and type are on previous line; try to look back
+            if i > 0:
+                back = candidate_lines[i-1]
+                m = ROW_LIKE.search(back)
+                rest = line
+            else:
+                rest = line
+        else:
+            rest = line[m.end():].strip()
+
+        if not m:
+            # fallback: try to extract any uppercase-with-digits token for course
+            course_search = re.search(r"[A-Z]{2,}\s*\d{3,}", line)
+            course = course_search.group(0).strip() if course_search else 'UNKNOWN'
+            typ = 'GEN'
+            group = ''
+        else:
             course = m.group('course').strip()
             typ = m.group('type').strip()
             group = (m.group('group') or '').strip()
-            # try to find day/time/location in the remainder of the line or next lines
-            rest = line[m.end():].strip()
-            combined = rest
-            # include next line if it looks like time/day info
-            if i+1 < len(lines):
-                combined += ' ' + lines[i+1]
-            # day
-            day = None
-            for w in DAY_WORDS:
-                if re.search(rf"\b{w}\b", combined, re.I):
-                    day = w
-                    break
-            # time
-            time_m = TIME_RE.search(combined)
-            start = end = None
-            if time_m:
-                start = normalize_time(time_m.group(1))
-                end = normalize_time(time_m.group(2))
-            # location heuristic: uppercase words or room numbers after time
-            loc = None
-            loc_search = re.search(r"\bRm\.?\s*\d+\b|\bRoom\s*\d+\b|[A-Z]{2,}\-?\d{1,3}\b", combined)
-            if loc_search:
-                loc = loc_search.group(0)
 
-            results.append({
-                "course": course,
-                "type": typ,
-                "group": group,
-                "day": day,
-                "start": start,
-                "end": end,
-                "location": loc,
-                "raw": line,
-            })
+        # aggregate context lines (this line + next)
+        combined = rest
+        if i+1 < len(candidate_lines):
+            combined += ' ' + candidate_lines[i+1]
+
+        # day
+        day = None
+        for w in DAY_WORDS:
+            if re.search(rf"\b{w}\b", combined, re.I):
+                day = w
+                break
+
+        # time
+        time_m = TIME_RE.search(combined)
+        start = end = None
+        if time_m:
+            start = normalize_time(time_m.group(1))
+            end = normalize_time(time_m.group(2))
+
+        # location heuristic
+        loc = None
+        loc_search = re.search(r"\bRm\.?\s*\d+\b|\bRoom\s*\d+\b|[A-Z]{2,}\-?\d{1,3}\b", combined)
+        if loc_search:
+            loc = loc_search.group(0)
+
+        results.append({
+            "course": course,
+            "type": typ,
+            "group": group,
+            "day": day,
+            "start": start,
+            "end": end,
+            "location": loc,
+            "raw": line,
+        })
+
     return results
 
 
