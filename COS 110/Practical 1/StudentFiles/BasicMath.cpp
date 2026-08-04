@@ -56,7 +56,7 @@ string calculate_summation(int lower, int upper)
 
         std::string trace;
         int result = calculate_summation(lower, upper, 0, trace);
-        trace += "Result: " + intToString(result) + "\n";
+        trace += "\nResult: " + intToString(result) + "\n";
         return trace;
     }
     catch (InvalidRangeError &e)

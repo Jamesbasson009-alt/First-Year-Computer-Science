@@ -95,4 +95,18 @@ window.addEventListener('DOMContentLoaded', () => {
       STATUS.textContent = 'Failed: ' + String(err);
     }
   });
+
+  const demoBtn = document.getElementById('demo-btn');
+  demoBtn.addEventListener('click', async (e) => {
+    STATUS.textContent = 'Loading demo...';
+    try{
+      const res = await fetch('/demo');
+      const out = await res.json();
+      if (out.error) { STATUS.textContent = 'Demo error'; return; }
+      STATUS.textContent = 'Demo loaded.';
+      renderParsed(out.parsed || out);
+      renderSolution(out.solution);
+      enableDownload(out);
+    }catch(err){ STATUS.textContent = 'Demo failed: '+String(err); }
+  });
 });

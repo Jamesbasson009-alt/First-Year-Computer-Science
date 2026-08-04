@@ -48,4 +48,21 @@ async def generate(request: Request):
         else:
             return JSONResponse({'error': 'no-input', 'message': 'Provide "filename" or "parsed" in JSON payload'})
     result = generate_timetable_from_parsed(parsed_rows)
+    # include parsed rows for UI convenience
+    result['parsed'] = parsed_rows
     return JSONResponse(result)
+
+
+@app.get('/demo')
+async def demo():
+    # small demo dataset with multiple components per course
+    demo_rows = [
+        {'course':'CSC101','type':'LEC','group':'A','day':'Mon','start':'09:00','end':'10:00'},
+        {'course':'CSC101','type':'TUT','group':'1','day':'Tue','start':'10:00','end':'11:00'},
+        {'course':'MTH100','type':'LEC','group':'A','day':'Mon','start':'10:00','end':'11:00'},
+        {'course':'PHY200','type':'LEC','group':'A','day':'Wed','start':'09:00','end':'10:30'},
+        {'course':'PHY200','type':'PRA','group':'1','day':'Thu','start':'11:00','end':'12:00'},
+    ]
+    res = generate_timetable_from_parsed(demo_rows)
+    res['parsed'] = demo_rows
+    return JSONResponse(res)

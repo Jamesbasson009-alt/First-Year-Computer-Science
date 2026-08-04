@@ -33,15 +33,22 @@ def overlaps(a_start, a_end, b_start, b_end):
 
 
 def build_course_options(rows: List[Dict]) -> Dict[str, List[Dict]]:
-    """Group parsed rows into course->list of option dicts."""
+    """Group parsed rows into per-component options.
+
+    Each course may have multiple types (LEC/TUT/PRA). Treat each component separately
+    so the solver selects one option per course+type, e.g., 'CSC101::LEC'.
+    """
     opts = defaultdict(list)
     for r in rows:
-        course = r.get('course') or 'UNKNOWN'
+        course = (r.get('course') or 'UNKNOWN').strip()
+        typ = (r.get('type') or 'GEN').strip().upper()
+        key = f"{course}::{typ}"
         day = r.get('day')
         start = time_to_minutes(r.get('start'))
         end = time_to_minutes(r.get('end'))
-        opts[course].append({
-            'type': r.get('type'),
+        opts[key].append({
+            'course': course,
+            'type': typ,
             'group': r.get('group'),
             'day': day,
             'start': start,
@@ -51,14 +58,14 @@ def build_course_options(rows: List[Dict]) -> Dict[str, List[Dict]]:
     return dict(opts)
 
 
-def solve_backtracking(options_by_course: Dict[str, List[Dict]]) -> Optional[Dict[str, Dict]]:
-    courses = list(options_by_course.keys())
-    n = len(courses)
-    assignment = {}
+def solve_backtracking(options_by_component: Dict[str, List[Dict]]) -> Optional[Dict[str, Dict]]:
+    components = list(options_by_component.keys())
+    n = len(components)
+    assignment: Dict[str, Dict] = {}
 
     # Pre-sort options for deterministic behavior
-    for k in options_by_course:
-        options_by_course[k] = sorted(options_by_course[k], key=lambda o: (o.get('day') or '', o.get('start') or 0))
+    for k in options_by_component:
+        options_by_component[k] = sorted(options_by_component[k], key=lambda o: (o.get('day') or '', o.get('start') or 0))
 
     def conflict_with_assignment(opt):
         for chosen in assignment.values():
@@ -71,14 +78,14 @@ def solve_backtracking(options_by_course: Dict[str, List[Dict]]) -> Optional[Dic
     def backtrack(idx=0):
         if idx >= n:
             return True
-        course = courses[idx]
-        for opt in options_by_course.get(course, []):
+        comp = components[idx]
+        for opt in options_by_component.get(comp, []):
             if conflict_with_assignment(opt):
                 continue
-            assignment[course] = opt
+            assignment[comp] = opt
             if backtrack(idx+1):
                 return True
-            assignment.pop(course, None)
+            assignment.pop(comp, None)
         return False
 
     ok = backtrack(0)
@@ -89,7 +96,7 @@ def generate_timetable_from_parsed(rows: List[Dict]) -> Dict:
     opts = build_course_options(rows)
     solution = solve_backtracking(opts)
     return {
-        'options_count': {k: len(v) for k,v in opts.items()},
+        'options_count': {k: len(v) for k, v in opts.items()},
         'solution': solution,
     }
 

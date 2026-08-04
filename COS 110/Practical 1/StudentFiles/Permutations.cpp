@@ -46,7 +46,6 @@ static void tryChars(char set[], int n, int k, string prefix, int depth, int cha
     tryChars(set, n, k, prefix, depth, charIndex + 1, stats, result);
 }
 
-
 static void generateHelper(char set[], int n, int k, string current, int depth, Statistics &stats, string &result)
 {
     if (depth > stats.maxDepth)
@@ -57,7 +56,10 @@ static void generateHelper(char set[], int n, int k, string current, int depth, 
     if (depth == k)
     {
         stats.totalCombinations++;
-        result += current + "\n";
+        if (k > 0)
+        {
+            result += current + "\n";
+        }
         return;
     }
 
@@ -83,7 +85,7 @@ string printAllKLength(char set[], int k, int n)
         string result;
         generateHelper(set, n, k, "", 0, stats, result);
 
-        result += "[Statistics]\n";
+        result += "\n[Statistics]\n";
         result += "Total combinations: " + intToString(stats.totalCombinations) + "\n";
         result += "Max recursion depth: " + intToString(stats.maxDepth) + "\n";
         result += "All prefixes: " + intToString(stats.allPrefixes) + "\n";
