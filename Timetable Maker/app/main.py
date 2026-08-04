@@ -26,7 +26,7 @@ async def upload(file: UploadFile = File(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-\n\n# Generate endpoint appended by tooling
+
 from fastapi import Request
 from app.solver import generate_timetable_from_parsed
 
