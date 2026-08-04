@@ -6,7 +6,11 @@ BASE = Path(__file__).resolve().parents[1]
 SAMPLES = BASE / "samples"
 SAMPLES.mkdir(parents=True, exist_ok=True)
 
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI(title="Timetable Maker")
+# serve static files
+app.mount("/static", StaticFiles(directory=str(BASE / "static")), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
