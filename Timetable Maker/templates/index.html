@@ -21,6 +21,12 @@
         <p class="muted">Choose the PDF your university provided. The app will attempt to parse groups and create a clash-free schedule.</p>
         <form id="upload-form" class="upload-form">
           <input type="file" id="file" name="file" accept="application/pdf" />
+          <label for="semester" class="muted">Semester (Offered)</label>
+          <select id="semester" name="semester">
+            <option value="">All</option>
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
           <div class="actions">
             <button type="submit" class="btn primary">Upload & Generate</button>
             <button id="demo-btn" type="button" class="btn">Use Demo</button>

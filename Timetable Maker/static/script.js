@@ -8,11 +8,13 @@ async function uploadPdf(file, onProgress) {
   return res.json();
 }
 
-async function generateTimetable(filename) {
+async function generateTimetable(filename, semester) {
+  const body = { filename };
+  if (semester) body.semester = semester;
   const res = await fetch('/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ filename }),
+    body: JSON.stringify(body),
   });
   return res.json();
 }
@@ -76,12 +78,13 @@ window.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f = fileInput.files[0];
+    const semesterVal = document.getElementById('semester').value;
     if (!f) return alert('Choose a PDF first.');
     STATUS.textContent = 'Uploading...';
     try{
       const info = await uploadPdf(f);
       STATUS.textContent = 'Uploaded — generating...';
-      const out = await generateTimetable(info.filename);
+      const out = await generateTimetable(info.filename, semesterVal);
       if (out.error) {
         STATUS.textContent = 'Error: ' + (out.message || out.error);
         renderParsed(out.details || out);
