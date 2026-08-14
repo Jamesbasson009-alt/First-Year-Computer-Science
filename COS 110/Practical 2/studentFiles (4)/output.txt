@@ -1,0 +1,27 @@
+Folder: Documents
+  Files:       2
+  Sub-Folders: 0
+  Total files: 2
+  Metadata:
+    size:        0
+    description: My personal documents
+    created:     10/08/2026
+    modified:    10/08/2026
+    permission:  full
+  Contents:    
+    File: notes.txt  [txt]
+      Metadata:
+        size:        0
+        description: meeting notes
+        created:     15/01/2026
+        modified:    15/01/2026
+        permission:  full
+      Contents: (empty)
+    File: data.csv  [csv]
+      Metadata:
+        size:        0
+        description: results grid
+        created:     10/08/2026
+        modified:    10/08/2026
+        permission:  full
+      Contents: (empty)
