@@ -52,7 +52,7 @@ Folder::Folder(const Folder &other)
 
     if (other.numFiles > 0)
     {
-        files = new File *[other.numFiles];
+        files = new File* [other.numFiles];
         for (int i = 0; i < other.numFiles; i++)
         {
             files[i] = new File(*other.files[i]);
