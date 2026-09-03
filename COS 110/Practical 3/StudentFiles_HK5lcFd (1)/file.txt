@@ -1,0 +1,4 @@
+Worker: 1,Bob,R6767.67
+Worker: 2,Alice,R234234.24
+Worker: 3,Santa,R473.34
+Worker: 4,WorkerWithNoName,R42.23
