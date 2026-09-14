@@ -1,5 +1,0 @@
-# ignore uploads and env
-samples/
-venv/
-__pycache__/
-*.pyc

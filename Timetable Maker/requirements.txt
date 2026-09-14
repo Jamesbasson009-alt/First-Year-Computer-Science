@@ -1,6 +1,0 @@
-fastapi
-uvicorn[standard]
-pdfplumber
-pypdf
-python-multipart
-# weasyprint removed: requires system libraries (install separately or use Docker if PDF export is needed)

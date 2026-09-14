@@ -8,7 +8,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
 from dotenv import load_dotenv
 from werkzeug.security import check_password_hash
-from database import get_connection
+import database
 
 load_dotenv()
 
@@ -118,18 +118,14 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
 
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute('SELECT id, password_hash, role FROM users WHERE username = %s', (username,))
-        user = c.fetchone()
-        conn.close()
+        user = database.get_user(username)
 
-        if user and check_password_hash(user[1], password):
-            session['user_id'] = user[0]
+        if user and check_password_hash(user['password_hash'], password):
+            session['user_id'] = user['id']
             session['username'] = username
-            session['role'] = user[2]
+            session['role'] = user['role']
             next_url = request.args.get('next')
-            if user[2] == 'admin':
+            if user['role'] == 'admin':
                 return redirect(next_url or url_for('admin_dashboard'))
             return redirect(next_url or url_for('home'))
         else:
@@ -741,15 +737,7 @@ async function runReminders() {
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute('SELECT COUNT(*) FROM appointments')
-    total = c.fetchone()[0]
-    c.execute('SELECT COUNT(*) FROM appointments WHERE reminder_sent = 0')
-    pending = c.fetchone()[0]
-    c.execute('SELECT COUNT(*) FROM appointments WHERE reminder_sent = 1')
-    sent = c.fetchone()[0]
-    conn.close()
+    total, pending, sent = database.count_appointments()
     return render_template_string(ADMIN_HTML, username=session.get('username'), total=total, pending=pending, sent=sent)
 
 @app.route('/admin/run-reminders', methods=['POST'])
@@ -890,20 +878,12 @@ async function deleteAppt(id) {
 @app.route('/appointments')
 @login_required
 def list_appointments():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute('''
-        SELECT id, practice_name, patient_name, patient_number, appointment_time, reminder_sent
-        FROM appointments
-        ORDER BY appointment_time ASC
-    ''')
-    rows = c.fetchall()
-    conn.close()
+    rows = database.get_all_appointments()
 
     now = datetime.now(SAST).replace(tzinfo=None)
     appointments = []
     for row in rows:
-        appt_id, practice, patient, number, appt_time, reminder_sent = row
+        appt_time = row['appointment_time']
         try:
             dt = datetime.strptime(appt_time, '%Y-%m-%d %H:%M')
             display_time = dt.strftime('%a %d %b, %H:%M')
@@ -912,11 +892,11 @@ def list_appointments():
             display_time = appt_time
             is_past = False
         appointments.append({
-            'id': appt_id,
-            'practice_name': practice,
-            'patient_name': patient,
+            'id': row['id'],
+            'practice_name': row['practice_name'],
+            'patient_name': row['patient_name'],
             'display_time': display_time,
-            'reminder_sent': bool(reminder_sent),
+            'reminder_sent': bool(row['reminder_sent']),
             'is_past': is_past,
         })
 
@@ -925,11 +905,7 @@ def list_appointments():
 @app.route('/appointments/<int:appt_id>', methods=['DELETE'])
 @login_required
 def delete_appointment(appt_id):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute('DELETE FROM appointments WHERE id = %s', (appt_id,))
-    conn.commit()
-    conn.close()
+    database.delete_appointment(appt_id)
     return jsonify({'status': 'deleted'})
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -956,14 +932,7 @@ def add_appointment():
         if appt_dt < datetime.now(SAST).replace(tzinfo=None):
             return jsonify({'error': "That date and time has already passed."}), 400
 
-        conn = get_connection()
-        c = conn.cursor()
-        c.execute('''
-            INSERT INTO appointments (practice_name, patient_name, patient_number, appointment_time)
-            VALUES (%s, %s, %s, %s)
-        ''', (practice_name, patient_name, patient_number, appointment_time))
-        conn.commit()
-        conn.close()
+        database.add_appointment(practice_name, patient_name, patient_number, appointment_time)
 
         # Send an instant WhatsApp confirmation, but don't let a messaging
         # failure block the booking itself from succeeding.
@@ -996,23 +965,13 @@ def whatsapp_reply():
     resp = MessagingResponse()
     msg = resp.message()
 
-    conn = get_connection()
-    c = conn.cursor()
-
-    c.execute('''
-        SELECT id, practice_name, appointment_time
-        FROM appointments
-        WHERE patient_number = %s
-        ORDER BY id DESC LIMIT 1
-    ''', (from_number,))
-    appt = c.fetchone()
+    appt = database.get_latest_appointment_for_number(from_number)
 
     if not appt:
         msg.body("We couldn't find an appointment linked to this number. Please contact the practice directly.")
-        conn.close()
         return str(resp)
 
-    appt_id, practice, appt_time = appt
+    practice, appt_time = appt['practice_name'], appt['appointment_time']
 
     if incoming_msg == '1':
         msg.body(f"Great, your appointment with {practice} on {appt_time} is confirmed. See you then!")
@@ -1021,7 +980,6 @@ def whatsapp_reply():
     else:
         msg.body("Sorry, I didn't understand that. Reply 1 to confirm or 2 to reschedule your appointment.")
 
-    conn.close()
     return str(resp)
 
 @app.route('/run-reminders')

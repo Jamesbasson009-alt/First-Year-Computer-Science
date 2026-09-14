@@ -1,36 +1,74 @@
-import os
-import psycopg2
-from dotenv import load_dotenv
+"""
+In-memory data store — no external database required.
 
-load_dotenv()
+Login credentials match the README: admin/admin and user/user.
+Appointment data lives only in this process's memory, so it resets
+whenever the app restarts or redeploys. That's the trade-off for
+never having to renew an expiring free database again.
+"""
+from werkzeug.security import generate_password_hash
 
-def get_connection():
-    return psycopg2.connect(os.getenv('DATABASE_URL'))
+_users = {
+    'admin': {'id': 1, 'password_hash': generate_password_hash('admin'), 'role': 'admin'},
+    'user': {'id': 2, 'password_hash': generate_password_hash('user'), 'role': 'receptionist'},
+}
 
-def init_db():
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS appointments (
-            id SERIAL PRIMARY KEY,
-            practice_name TEXT NOT NULL,
-            patient_name TEXT NOT NULL,
-            patient_number TEXT NOT NULL,
-            appointment_time TEXT NOT NULL,
-            reminder_sent INTEGER DEFAULT 0
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT NOT NULL CHECK (role IN ('admin', 'receptionist'))
-        )
-    ''')
-    conn.commit()
-    conn.close()
+_appointments = []
+_next_id = 1
 
-if __name__ == '__main__':
-    init_db()
-    print("Database created.")
+
+def get_user(username):
+    return _users.get(username)
+
+
+def add_appointment(practice_name, patient_name, patient_number, appointment_time):
+    global _next_id
+    appt = {
+        'id': _next_id,
+        'practice_name': practice_name,
+        'patient_name': patient_name,
+        'patient_number': patient_number,
+        'appointment_time': appointment_time,
+        'reminder_sent': 0,
+    }
+    _appointments.append(appt)
+    _next_id += 1
+    return appt['id']
+
+
+def get_all_appointments():
+    return sorted(_appointments, key=lambda a: a['appointment_time'])
+
+
+def delete_appointment(appt_id):
+    global _appointments
+    _appointments = [a for a in _appointments if a['id'] != appt_id]
+
+
+def get_latest_appointment_for_number(patient_number):
+    matches = [a for a in _appointments if a['patient_number'] == patient_number]
+    return max(matches, key=lambda a: a['id']) if matches else None
+
+
+def get_due_reminders(date_prefix):
+    return [a for a in _appointments
+            if a['appointment_time'].startswith(date_prefix) and not a['reminder_sent']]
+
+
+def mark_reminder_sent(appt_id):
+    for a in _appointments:
+        if a['id'] == appt_id:
+            a['reminder_sent'] = 1
+
+
+def delete_appointments_before(cutoff):
+    global _appointments
+    before = len(_appointments)
+    _appointments = [a for a in _appointments if a['appointment_time'] >= cutoff]
+    return before - len(_appointments)
+
+
+def count_appointments():
+    total = len(_appointments)
+    pending = sum(1 for a in _appointments if not a['reminder_sent'])
+    return total, pending, total - pending

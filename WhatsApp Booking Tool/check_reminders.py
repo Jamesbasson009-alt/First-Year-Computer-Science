@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 import pytz
 from twilio.rest import Client
-from database import get_connection
+import database
 
 load_dotenv()
 
@@ -16,57 +16,43 @@ client = Client(account_sid, auth_token)
 SAST = pytz.timezone('Africa/Johannesburg')
 
 def check_reminders():
-    conn = get_connection()
-    c = conn.cursor()
-
     now_sast = datetime.now(SAST)
     tomorrow = (now_sast + timedelta(days=1)).strftime('%Y-%m-%d')
 
-    c.execute('''
-        SELECT id, practice_name, patient_name, patient_number, appointment_time
-        FROM appointments
-        WHERE appointment_time LIKE %s AND reminder_sent = 0
-    ''', (f'{tomorrow}%',))
-
-    due = c.fetchall()
+    due = database.get_due_reminders(tomorrow)
 
     if not due:
         print("No reminders due.")
 
     for appt in due:
-        appt_id, practice, patient, number, time = appt
-        appt_hour = time.split(' ')[1]
-        message_body = f"Hi {patient}, reminder: you have an appointment with {practice} tomorrow at {appt_hour}. Reply 1 to confirm or 2 to reschedule."
+        appt_hour = appt['appointment_time'].split(' ')[1]
+        message_body = (
+            f"Hi {appt['patient_name']}, reminder: you have an appointment with "
+            f"{appt['practice_name']} tomorrow at {appt_hour}. Reply 1 to confirm or 2 to reschedule."
+        )
 
         message = client.messages.create(
             from_=twilio_number,
             body=message_body,
-            to=f'whatsapp:{number}'
+            to=f"whatsapp:{appt['patient_number']}"
         )
 
-        print(f"Sent to {number}, SID: {message.sid}")
+        print(f"Sent to {appt['patient_number']}, SID: {message.sid}")
+        database.mark_reminder_sent(appt['id'])
 
-        c.execute('UPDATE appointments SET reminder_sent = 1 WHERE id = %s', (appt_id,))
-
-    conn.commit()
-
-    # Clean up appointments that are clearly in the past. A one-day grace
-    # period is kept so a patient can still reply on WhatsApp about an
-    # appointment that happened earlier today before it's removed.
     cutoff = (now_sast - timedelta(days=1)).strftime('%Y-%m-%d %H:%M')
-    c.execute('''
-        DELETE FROM appointments
-        WHERE appointment_time < %s
-    ''', (cutoff,))
-    deleted_count = c.rowcount
-    conn.commit()
+    deleted_count = database.delete_appointments_before(cutoff)
 
     if deleted_count:
         print(f"Cleared {deleted_count} past appointment(s).")
     else:
         print("No past appointments to clear.")
 
-    conn.close()
-
 if __name__ == '__main__':
+    # Running this file standalone (e.g. from a GitHub Actions cron) no
+    # longer works: appointment data now lives only in the memory of the
+    # running Flask process on Render, not in an external database a
+    # separate script can reach. Point your GitHub Actions workflow at the
+    # deployed endpoint instead, e.g.:
+    #   curl "https://whatsapp-booking-osmf.onrender.com/run-reminders?key=$REMINDER_SECRET"
     check_reminders()
