@@ -1,0 +1,38 @@
+Device ID: TH_01
+The device is currently 0
+The current temperature: 20
+The target temperature: 22.5
+Device ID: LT_01
+The device is currently 0
+The brightness of the light: 75
+
+The light is ON at 75%
+
+Active devices: 2
+
+Device ID: TH_01
+The device is currently 1
+The current temperature: 20.5
+The target temperature: 22.5
+Device ID: LT_01
+The device is currently 1
+The brightness of the light: 75
+
+Removed device: LT_01
+
+Device ID: TH_01
+The device is currently 1
+The current temperature: 20.5
+The target temperature: 22.5
+
+Device ID: TH_01
+The device is currently 1
+The current temperature: 20.5
+The target temperature: 22.5
+Device ID: LT_01
+The device is currently 1
+The brightness of the light: 75
+
+Active devices in main: 0
+
+Active devices in backup: 2
